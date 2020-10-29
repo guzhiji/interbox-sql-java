@@ -7,6 +7,7 @@ import java.util.List;
 
 public abstract class QbCondClause {
     private boolean enabled = true;
+    boolean negated = false;
 
     public boolean isEnabled() {
         return enabled;

@@ -1,8 +1,8 @@
 package interbox.data.sql;
 
 
-class NotCond extends RelCond {
+class NotCond extends LogicalCond {
     NotCond(QbCondClause cond) {
-        super(QueryBuilder.Rel.NOT, cond, null);
+        super(QueryBuilder.Logical.NOT, cond, null);
     }
 }

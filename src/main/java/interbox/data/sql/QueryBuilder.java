@@ -1,23 +1,48 @@
 package interbox.data.sql;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 
 public class QueryBuilder {
+
     public enum Order {
         ASC, DESC
     }
+
     public enum Comp {
-        EQ("="), NEQ("<>"), LT("<"), LTE("<="), GT(">"), GTE(">="), LIKE("like"), IN("in");
+        EQ("="), NEQ("<>"),
+        LT("<"), LTE("<="),
+        GT(">"), GTE(">="),
+        LIKE("like"), NOT_LIKE("not like"),
+        IN("in"), NOT_IN("not in");
+
+        private final static Map<Comp, Comp> NEGATION_MAP;
+        static {
+            Map<Comp, Comp> m = new HashMap<>();
+            m.put(EQ, NEQ);
+            m.put(NEQ, EQ);
+            m.put(LT, GTE);
+            m.put(GTE, LT);
+            m.put(GT, LTE);
+            m.put(LTE, GT);
+            m.put(LIKE, NOT_LIKE);
+            m.put(NOT_LIKE, LIKE);
+            m.put(IN, NOT_IN);
+            m.put(NOT_IN, IN);
+            NEGATION_MAP = Collections.unmodifiableMap(m);
+        }
 
         final String token;
         Comp(String t) {
             token = t;
         }
+
+        public Comp negate() {
+            return NEGATION_MAP.get(this);
+        }
     }
-    public enum Rel {
+
+    public enum Logical {
         AND, OR, NOT
     }
 
@@ -73,41 +98,41 @@ public class QueryBuilder {
         return new ExistsCond(table2);
     }
 
-    private static QbCondClause convCondList(Rel rel, List<QbCondClause> condList) {
+    private static QbCondClause convCondList(Logical logical, List<QbCondClause> condList) {
         int n = condList.size();
         if (n == 0)
             throw new IllegalArgumentException("empty condition list");
         if (n < 2)
             return condList.get(0);
         if (n == 2)
-            return new RelCond(rel, condList.get(0), condList.get(1));
-        return new RelCondList(rel, condList);
+            return new LogicalCond(logical, condList.get(0), condList.get(1));
+        return new LogicalCondList(logical, condList);
     }
 
-    private static QbCondClause convCondList(Rel rel, QbCondClause cond1, QbCondClause cond2, QbCondClause... condMore) {
+    private static QbCondClause convCondList(Logical logical, QbCondClause cond1, QbCondClause cond2, QbCondClause... condMore) {
         if (condMore.length == 0)
-            return new RelCond(rel, cond1, cond2);
+            return new LogicalCond(logical, cond1, cond2);
         List<QbCondClause> condList = new ArrayList<>();
         condList.add(cond1);
         condList.add(cond2);
         condList.addAll(Arrays.asList(condMore));
-        return new RelCondList(rel, condList);
+        return new LogicalCondList(logical, condList);
     }
 
     public static QbCondClause and(List<QbCondClause> condList) {
-        return convCondList(Rel.AND, condList);
+        return convCondList(Logical.AND, condList);
     }
 
     public static QbCondClause and(QbCondClause cond1, QbCondClause cond2, QbCondClause... condMore) {
-        return convCondList(Rel.AND, cond1, cond2, condMore);
+        return convCondList(Logical.AND, cond1, cond2, condMore);
     }
 
     public static QbCondClause or(List<QbCondClause> condList) {
-        return convCondList(Rel.OR, condList);
+        return convCondList(Logical.OR, condList);
     }
 
     public static QbCondClause or(QbCondClause cond1, QbCondClause cond2, QbCondClause... condMore) {
-        return convCondList(Rel.OR, cond1, cond2, condMore);
+        return convCondList(Logical.OR, cond1, cond2, condMore);
     }
 
     public static QbCondClause not(QbCondClause cond) {

@@ -43,6 +43,7 @@ class SelectGen {
         // where clause
         if (select.where != null) {
             GenCtx whereCtx = new GenCtx(ctx);
+            select.where.negated = false;
             visitCond(select.where, whereCtx);
             sb.append(" where ").append(whereCtx.result);
         }
@@ -83,6 +84,7 @@ class SelectGen {
                     .append(" on ");
         } // TODO empty join clause
         GenCtx onCtx = new GenCtx(ctx);
+        join.on.negated = false;
         visitCond(join.on, onCtx);
         sb.append(onCtx.result);
         ctx.result = sb.toString();
@@ -92,10 +94,12 @@ class SelectGen {
         if (cond != null && cond.isEnabled()) {
             if (cond instanceof ExprCond) {
                 visitExprCond((ExprCond) cond, obj);
-            } else if (cond instanceof RelCond) {
-                visitRelCond((RelCond) cond, obj);
-            } else if (cond instanceof RelCondList) {
-                visitRelCondList((RelCondList) cond, obj);
+            } else if (cond instanceof NotCond) {
+                visitNotCond((NotCond) cond, obj);
+            } else if (cond instanceof LogicalCond) {
+                visitLogicalCond((LogicalCond) cond, obj);
+            } else if (cond instanceof LogicalCondList) {
+                visitLogicalCondList((LogicalCondList) cond, obj);
             } else if (cond instanceof SCompCond) {
                 visitSCompCond((SCompCond) cond, obj);
             } else if (cond instanceof OCompCond) {
@@ -110,28 +114,50 @@ class SelectGen {
 
     public void visitExprCond(ExprCond cond, Object obj) {
         GenCtx ctx = (GenCtx) obj;
-        ctx.result = cond.expr;
+        if (cond.negated)
+            ctx.result = "not (" + cond.expr + ')';
+        else
+            ctx.result = cond.expr;
     }
 
-    public void visitRelCond(RelCond cond, Object obj) {
+    public void visitNotCond(NotCond cond, Object obj) {
+        cond.cond1.negated = !cond.negated; // pass down this NOT
+        // else not-not=do-nothing
+        visitCond(cond.cond1, obj);
+    }
+
+    public void visitLogicalCond(LogicalCond cond, Object obj) {
         GenCtx ctx = (GenCtx) obj;
         if (Arrays.asList(
-                QueryBuilder.Rel.AND,
-                QueryBuilder.Rel.OR).contains(cond.rel)) {
-            String op = cond.rel.name().toLowerCase();
-            GenCtx c1 = new GenCtx(ctx);
-            visitCond(cond.cond1, c1);
-            GenCtx c2 = new GenCtx(ctx);
-            visitCond(cond.cond2, c2);
-            ctx.result = '(' + c1.result + ") " + op + " (" + c2.result + ')';
-        } else if (cond.rel == QueryBuilder.Rel.NOT) {
-            // TODO not operator
-        }
+                QueryBuilder.Logical.AND,
+                QueryBuilder.Logical.OR).contains(cond.logical)) {
+            if (cond.negated) {
+                // not (a and b)=not a or not b
+                QueryBuilder.Logical l = cond.logical == QueryBuilder.Logical.AND
+                        ? QueryBuilder.Logical.OR :
+                        QueryBuilder.Logical.AND;
+                String op = l.name().toLowerCase();
+                GenCtx c1 = new GenCtx(ctx);
+                cond.cond1.negated = true;
+                visitCond(cond.cond1, c1);
+                GenCtx c2 = new GenCtx(ctx);
+                cond.cond2.negated = true;
+                visitCond(cond.cond2, c2);
+                ctx.result = '(' + c1.result + ") " + op + " (" + c2.result + ')';
+            } else {
+                String op = cond.logical.name().toLowerCase();
+                GenCtx c1 = new GenCtx(ctx);
+                visitCond(cond.cond1, c1);
+                GenCtx c2 = new GenCtx(ctx);
+                visitCond(cond.cond2, c2);
+                ctx.result = '(' + c1.result + ") " + op + " (" + c2.result + ')';
+            }
+        } // TODO illegal logical operator
     }
 
-    public void visitRelCondList(RelCondList condList, Object obj) {
+    public void visitLogicalCondList(LogicalCondList condList, Object obj) {
         GenCtx ctx = (GenCtx) obj;
-        String op = condList.rel.name().toLowerCase();
+        String op = condList.logical.name().toLowerCase();
         StringBuilder sb = new StringBuilder();
         for (QbCondClause cond : condList.condList) {
             if (cond.isEnabled()) {
@@ -142,19 +168,33 @@ class SelectGen {
                 sb.append('(').append(c.result).append(')');
             }
         }
-        ctx.result = sb.toString();
+        if (condList.negated)
+            ctx.result = "not (" + sb.toString() + ')';
+        else
+            ctx.result = sb.toString();
     }
 
     public void visitSCompCond(SCompCond cond, Object obj) {
         GenCtx ctx = (GenCtx) obj;
         String e = cond.expr;
-        if (cond.asExpr) {
-            e += cond.comp.token + cond.str;
-        } else if (cond.str == null) {
-            e += " is null";
+        if (cond.negated) {
+            if (cond.asExpr) {
+                e += cond.comp.negate().token + cond.str;
+            } else if (cond.str == null) {
+                e += " is not null";
+            } else {
+                e += cond.comp.negate().token + '?';
+                ctx.params.add(cond.str);
+            }
         } else {
-            e += cond.comp.token + '?';
-            ctx.params.add(cond.str);
+            if (cond.asExpr) {
+                e += cond.comp.token + cond.str;
+            } else if (cond.str == null) {
+                e += " is null";
+            } else {
+                e += cond.comp.token + '?';
+                ctx.params.add(cond.str);
+            }
         }
         ctx.result = e;
     }
@@ -162,25 +202,42 @@ class SelectGen {
     public void visitOCompCond(OCompCond cond, Object obj) {
         GenCtx ctx = (GenCtx) obj;
         String e = cond.expr;
-        if (cond.value == null) {
-            e += " is null";
-        } else if (cond.value instanceof QbSelect) {
-            GenCtx sc = new GenCtx(ctx);
-            visitSelect((QbSelect) cond.value, sc);
-            e += cond.comp.token + '(' + sc.result + ')';
+        if (cond.negated) {
+            if (cond.value == null) {
+                e += " is not null";
+            } else if (cond.value instanceof QbSelect) {
+                GenCtx sc = new GenCtx(ctx);
+                visitSelect((QbSelect) cond.value, sc);
+                e += cond.comp.negate().token + '(' + sc.result + ')';
+            } else {
+                e += cond.comp.negate().token + '?';
+                ctx.params.add(cond.value);
+            }
         } else {
-            e += cond.comp.token + '?';
-            ctx.params.add(cond.value);
+            if (cond.value == null) {
+                e += " is null";
+            } else if (cond.value instanceof QbSelect) {
+                GenCtx sc = new GenCtx(ctx);
+                visitSelect((QbSelect) cond.value, sc);
+                e += cond.comp.token + '(' + sc.result + ')';
+            } else {
+                e += cond.comp.token + '?';
+                ctx.params.add(cond.value);
+            }
         }
         ctx.result = e;
     }
 
     public void visitInCond(InCond cond, Object obj) {
         GenCtx ctx = (GenCtx) obj;
-        String e = cond.expr + " in (";
+        String e = cond.expr;
+        if (cond.negated)
+            e += " not in ";
+        else
+            e += " in ";
         GenCtx inCtx = new GenCtx(ctx);
         visitSelect(cond.subquery, inCtx);
-        e += inCtx.result + ')';
+        e += '(' + inCtx.result + ')';
         ctx.result = e;
     }
 
@@ -188,7 +245,8 @@ class SelectGen {
         GenCtx ctx = (GenCtx) obj;
         GenCtx exCtx = new GenCtx(ctx);
         visitSelect(cond.subquery, exCtx);
-        ctx.result = "exists (" + exCtx.result + ")";
+        String op = cond.negated ? "not exists" : "exists";
+        ctx.result = op + " (" + exCtx.result + ")";
     }
 
     public void visitGroupBy(GroupByClause groupBy, Object obj) {
@@ -196,6 +254,7 @@ class SelectGen {
         String gb = "group by " + groupBy.field;
         if (groupBy.having != null) {
             GenCtx c = new GenCtx(ctx);
+            groupBy.having.negated = false;
             visitCond(groupBy.having, c);
             gb += " having " + c.result;
         }
