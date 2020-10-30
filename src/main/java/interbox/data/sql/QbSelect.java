@@ -98,9 +98,8 @@ public class QbSelect {
     //-------------------------------------
 
     private GenCtx genSql() {
-        List<Object> params = new ArrayList<>();
-        GenCtx genCtx = new GenCtx(params);
-        SelectGen gen = new SelectGen();
+        GenCtx genCtx = new GenCtx();
+        SqlGen gen = new SqlGen();
         gen.visitSelect(this, genCtx);
         return genCtx;
     }
@@ -117,7 +116,7 @@ public class QbSelect {
         GenCtx genCtx = genSql();
         try (PreparedStatement stmt = conn.prepareStatement(genCtx.result)) {
             for (int i = 0; i < genCtx.params.size(); i++) {
-                Object p = genCtx.params.get(i);
+                Object p = genCtx.params.get(i).value;
                 stmt.setObject(i + 1, p);
             }
             try (ResultSet rs = stmt.executeQuery()) {
@@ -140,7 +139,7 @@ public class QbSelect {
         GenCtx genCtx = genSql();
         try (PreparedStatement stmt = conn.prepareStatement(genCtx.result)) {
             for (int i = 0; i < genCtx.params.size(); i++) {
-                Object p = genCtx.params.get(i);
+                Object p = genCtx.params.get(i).value;
                 stmt.setObject(i + 1, p);
             }
             try (ResultSet rs = stmt.executeQuery()) {
@@ -162,7 +161,18 @@ public class QbSelect {
     }
 
     public <T> List<T> findAll(Connection conn, Class<T> cls) {
-        return Collections.emptyList();
+        GenCtx genCtx = genSql();
+        try (PreparedStatement stmt = conn.prepareStatement(genCtx.result)) {
+            for (int i = 0; i < genCtx.params.size(); i++) {
+                Object p = genCtx.params.get(i).value;
+                stmt.setObject(i + 1, p);
+            }
+            try (ResultSet rs = stmt.executeQuery()) {
+                return Collections.emptyList(); // TODO data mapping
+            }
+        } catch (SQLException e) {
+            throw new QbException("sql error", e);
+        }
     }
 
 }

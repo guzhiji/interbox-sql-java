@@ -1,10 +1,9 @@
 package interbox.data.sql;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 
 
 public class QbDelete {
@@ -25,18 +24,25 @@ public class QbDelete {
     }
 
     private GenCtx genSql() {
-        List<Object> params = new ArrayList<>();
-        GenCtx genCtx = new GenCtx(params);
-        SelectGen gen = new SelectGen();
+        GenCtx genCtx = new GenCtx();
+        SqlGen gen = new SqlGen();
         gen.visitDelete(this, genCtx);
         return genCtx;
+    }
+
+    public int execute(DataSource ds) {
+        try {
+            return execute(ds.getConnection());
+        } catch (SQLException ex) {
+            throw new QbException("fail to connect to db", ex);
+        }
     }
 
     public int execute(Connection conn) {
         GenCtx genCtx = genSql();
         try (PreparedStatement stmt = conn.prepareStatement(genCtx.result)) {
             for (int i = 0; i < genCtx.params.size(); i++) {
-                Object p = genCtx.params.get(i);
+                Object p = genCtx.params.get(i).value;
                 stmt.setObject(i + 1, p);
             }
             return stmt.executeUpdate();

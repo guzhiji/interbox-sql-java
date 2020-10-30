@@ -3,7 +3,7 @@ package interbox.data.sql;
 import java.util.Arrays;
 
 
-class SelectGen {
+class SqlGen {
 
     public void visitSelect(QbSelect select, Object obj) {
         GenCtx ctx = (GenCtx) obj;
@@ -203,7 +203,7 @@ class SelectGen {
                 e += " is not null";
             } else {
                 e += cond.comp.negate().token + '?';
-                ctx.params.add(cond.str);
+                ctx.addParam(cond.str);
             }
         } else {
             if (cond.asExpr) {
@@ -212,7 +212,7 @@ class SelectGen {
                 e += " is null";
             } else {
                 e += cond.comp.token + '?';
-                ctx.params.add(cond.str);
+                ctx.addParam(cond.str);
             }
         }
         ctx.result = e;
@@ -230,7 +230,7 @@ class SelectGen {
                 e += cond.comp.negate().token + '(' + sc.result + ')';
             } else {
                 e += cond.comp.negate().token + '?';
-                ctx.params.add(cond.value);
+                ctx.addParam(cond.value);
             }
         } else {
             if (cond.value == null) {
@@ -241,7 +241,7 @@ class SelectGen {
                 e += cond.comp.token + '(' + sc.result + ')';
             } else {
                 e += cond.comp.token + '?';
-                ctx.params.add(cond.value);
+                ctx.addParam(cond.value);
             }
         }
         ctx.result = e;
