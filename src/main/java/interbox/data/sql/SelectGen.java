@@ -33,7 +33,9 @@ class SelectGen {
             visitSelect(select.fromSubquery, subCtx);
             sb.append(" from ").append('(').append(subCtx.result).append(')')
                     .append(" as ").append(select.fromAlias);
-        } // TODO empty from clause
+        } else {
+            throw new QbException("empty from clause");
+        }
         // join clauses
         for (JoinClause join : select.joins) {
             GenCtx joinCtx = new GenCtx(ctx);
@@ -66,6 +68,19 @@ class SelectGen {
         ctx.result = sb.toString();
     }
 
+    public void visitDelete(QbDelete delete, Object obj) {
+        GenCtx ctx = (GenCtx) obj;
+        StringBuilder sb = new StringBuilder();
+        sb.append("delete from ").append(delete.fromTable);
+        if (delete.where != null) {
+            GenCtx wc = new GenCtx(ctx);
+            delete.where.negated = false;
+            visitCond(delete.where, wc);
+            sb.append(" where ").append(wc.result);
+        }
+        ctx.result = sb.toString();
+    }
+
     public void visitJoin(JoinClause join, Object obj) {
         GenCtx ctx = (GenCtx) obj;
         StringBuilder sb = new StringBuilder();
@@ -82,7 +97,9 @@ class SelectGen {
                     .append(") as ")
                     .append(join.alias)
                     .append(" on ");
-        } // TODO empty join clause
+        } else {
+            throw new QbException("empty join clause");
+        }
         GenCtx onCtx = new GenCtx(ctx);
         join.on.negated = false;
         visitCond(join.on, onCtx);
@@ -152,7 +169,9 @@ class SelectGen {
                 visitCond(cond.cond2, c2);
                 ctx.result = '(' + c1.result + ") " + op + " (" + c2.result + ')';
             }
-        } // TODO illegal logical operator
+        } else {
+            throw new QbException("illegal logical operator");
+        }
     }
 
     public void visitLogicalCondList(LogicalCondList condList, Object obj) {

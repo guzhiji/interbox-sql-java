@@ -97,6 +97,14 @@ public class QbSelect {
 
     //-------------------------------------
 
+    private GenCtx genSql() {
+        List<Object> params = new ArrayList<>();
+        GenCtx genCtx = new GenCtx(params);
+        SelectGen gen = new SelectGen();
+        gen.visitSelect(this, genCtx);
+        return genCtx;
+    }
+
     public boolean exists(DataSource ds) {
         try {
             return exists(ds.getConnection());
@@ -106,12 +114,8 @@ public class QbSelect {
     }
 
     public boolean exists(Connection conn) {
-        List<Object> params = new ArrayList<>();
-        GenCtx genCtx = new GenCtx(params);
-        SelectGen gen = new SelectGen();
-        gen.visitSelect(this, genCtx);
-        String sql = genCtx.result;
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+        GenCtx genCtx = genSql();
+        try (PreparedStatement stmt = conn.prepareStatement(genCtx.result)) {
             for (int i = 0; i < genCtx.params.size(); i++) {
                 Object p = genCtx.params.get(i);
                 stmt.setObject(i + 1, p);
@@ -133,7 +137,20 @@ public class QbSelect {
     }
 
     public <T> T findOne(Connection conn, Class<T> cls) {
-        return null;
+        GenCtx genCtx = genSql();
+        try (PreparedStatement stmt = conn.prepareStatement(genCtx.result)) {
+            for (int i = 0; i < genCtx.params.size(); i++) {
+                Object p = genCtx.params.get(i);
+                stmt.setObject(i + 1, p);
+            }
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next())
+                    return null;
+                return null; // TODO data mapping
+            }
+        } catch (SQLException e) {
+            throw new QbException("sql error", e);
+        }
     }
 
     public <T> List<T> findAll(DataSource ds, Class<T> cls) {

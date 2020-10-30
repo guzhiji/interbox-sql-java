@@ -3,6 +3,8 @@ package interbox.data.sql;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class QbDelete {
@@ -22,9 +24,21 @@ public class QbDelete {
         return this;
     }
 
+    private GenCtx genSql() {
+        List<Object> params = new ArrayList<>();
+        GenCtx genCtx = new GenCtx(params);
+        SelectGen gen = new SelectGen();
+        gen.visitDelete(this, genCtx);
+        return genCtx;
+    }
+
     public int execute(Connection conn) {
-        try (PreparedStatement stmt = conn.prepareStatement("")) {
-            // TODO set params
+        GenCtx genCtx = genSql();
+        try (PreparedStatement stmt = conn.prepareStatement(genCtx.result)) {
+            for (int i = 0; i < genCtx.params.size(); i++) {
+                Object p = genCtx.params.get(i);
+                stmt.setObject(i + 1, p);
+            }
             return stmt.executeUpdate();
         } catch (SQLException e) {
             throw new QbException("sql error", e);
