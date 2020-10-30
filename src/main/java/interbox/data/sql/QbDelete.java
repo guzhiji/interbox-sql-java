@@ -4,6 +4,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.Objects;
 
 
 public class QbDelete {
@@ -11,6 +12,7 @@ public class QbDelete {
     QbCondClause where;
 
     QbDelete(String tableName) {
+        Objects.requireNonNull(tableName);
         fromTable = tableName;
     }
 

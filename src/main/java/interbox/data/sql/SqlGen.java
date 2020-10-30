@@ -81,6 +81,61 @@ class SqlGen {
         ctx.result = sb.toString();
     }
 
+    public void visitUpdate(QbUpdate update, Object obj) {
+        GenCtx ctx = (GenCtx) obj;
+        StringBuilder sb = new StringBuilder();
+        sb.append("update ").append(update.table).append(" set ");
+        if (update.assignments.isEmpty())
+            throw new QbException("no data to update");
+        for (int i = 0; i < update.assignments.size(); i++) {
+            if (i > 0) sb.append(',');
+            Assignment a = update.assignments.get(i);
+            if (a instanceof SAssign) {
+                SAssign sa = (SAssign) a;
+                sb.append(sa.field).append('=').append(sa.expr);
+            } else if (a instanceof OAssign) {
+                OAssign oa = (OAssign) a;
+                sb.append(oa.field).append("=?");
+                ctx.addParam(oa.value, oa.type);
+            }
+        }
+        if (update.where != null) {
+            GenCtx wc = new GenCtx(ctx);
+            update.where.negated = false;
+            visitCond(update.where, wc);
+            sb.append(" where ").append(wc.result);
+        }
+        ctx.result = sb.toString();
+    }
+
+    public void visitInsert(QbInsert insert, Object obj) {
+        GenCtx ctx = (GenCtx) obj;
+        StringBuilder fields = new StringBuilder();
+        StringBuilder values = new StringBuilder();
+        if (insert.assignments.isEmpty())
+            throw new QbException("no data to insert");
+        for (int i = 0; i < insert.assignments.size(); i++) {
+            if (i > 0) {
+                fields.append(',');
+                values.append(',');
+            }
+            Assignment a = insert.assignments.get(i);
+            if (a instanceof SAssign) {
+                SAssign sa = (SAssign) a;
+                fields.append(sa.field);
+                values.append(sa.expr);
+            } else if (a instanceof OAssign) {
+                OAssign oa = (OAssign) a;
+                fields.append(oa.field);
+                values.append('?');
+                ctx.addParam(oa.value, oa.type);
+            }
+        }
+        ctx.result = "insert into " + insert.table + " (" +
+                fields.toString() + ") values (" +
+                values.toString() + ')';
+    }
+
     public void visitJoin(JoinClause join, Object obj) {
         GenCtx ctx = (GenCtx) obj;
         StringBuilder sb = new StringBuilder();
@@ -265,7 +320,7 @@ class SqlGen {
         GenCtx exCtx = new GenCtx(ctx);
         visitSelect(cond.subquery, exCtx);
         String op = cond.negated ? "not exists" : "exists";
-        ctx.result = op + " (" + exCtx.result + ")";
+        ctx.result = op + " (" + exCtx.result + ')';
     }
 
     public void visitGroupBy(GroupByClause groupBy, Object obj) {

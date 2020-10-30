@@ -50,6 +50,11 @@ public class QueryTest {
                     .execute(conn);
         }
 
+        QueryBuilder.update("person")
+                .value("age", 10)
+                .where(QueryBuilder.eq("name", "tom"))
+                .execute(ds);
+
     }
 
 }

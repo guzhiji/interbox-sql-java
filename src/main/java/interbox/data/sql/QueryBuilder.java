@@ -47,7 +47,6 @@ public class QueryBuilder {
     }
 
     public static QbSelect selectFrom(String tableName, String tableAlias) {
-        Objects.requireNonNull(tableName);
         return new QbSelect(tableName, tableAlias);
     }
 
@@ -56,14 +55,19 @@ public class QueryBuilder {
     }
 
     public static QbSelect selectFrom(QbSelect table, String tableAlias) {
-        Objects.requireNonNull(table);
-        Objects.requireNonNull(tableAlias);
         return new QbSelect(table, tableAlias);
     }
 
     public static QbDelete deleteFrom(String tableName) {
-        Objects.requireNonNull(tableName);
         return new QbDelete(tableName);
+    }
+
+    public static QbUpdate update(String tableName) {
+        return new QbUpdate(tableName);
+    }
+
+    public static QbInsert insertInto(String tableName) {
+        return new QbInsert(tableName);
     }
 
     public static QbCondClause cond(String expr) {

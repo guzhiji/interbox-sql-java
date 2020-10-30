@@ -24,12 +24,15 @@ public class QbSelect {
     final List<OrderBy> orderBys = new ArrayList<>();
 
     QbSelect(String tableName, String tableAlias) {
+        Objects.requireNonNull(tableName);
         this.fromTable = tableName;
         this.fromAlias = tableAlias;
         this.fromSubquery = null;
     }
 
     QbSelect(QbSelect table, String tableAlias) {
+        Objects.requireNonNull(table);
+        Objects.requireNonNull(tableAlias);
         this.fromSubquery = table;
         this.fromAlias = tableAlias;
         this.fromTable = null;
@@ -63,6 +66,40 @@ public class QbSelect {
         Objects.requireNonNull(table2);
         Objects.requireNonNull(alias);
         joins.add(new JoinClause(JoinClause.Type.INNER, table2, alias, on));
+        return this;
+    }
+
+    public QbSelect leftJoin(String table2, QbCondClause on) {
+        return leftJoin(table2, null, on);
+    }
+
+    public QbSelect leftJoin(String table2, String alias, QbCondClause on) {
+        Objects.requireNonNull(table2);
+        joins.add(new JoinClause(JoinClause.Type.LEFT, table2, alias, on));
+        return this;
+    }
+
+    public QbSelect leftJoin(QbSelect table2, String alias, QbCondClause on) {
+        Objects.requireNonNull(table2);
+        Objects.requireNonNull(alias);
+        joins.add(new JoinClause(JoinClause.Type.LEFT, table2, alias, on));
+        return this;
+    }
+
+    public QbSelect rightJoin(String table2, QbCondClause on) {
+        return rightJoin(table2, null, on);
+    }
+
+    public QbSelect rightJoin(String table2, String alias, QbCondClause on) {
+        Objects.requireNonNull(table2);
+        joins.add(new JoinClause(JoinClause.Type.RIGHT, table2, alias, on));
+        return this;
+    }
+
+    public QbSelect rightJoin(QbSelect table2, String alias, QbCondClause on) {
+        Objects.requireNonNull(table2);
+        Objects.requireNonNull(alias);
+        joins.add(new JoinClause(JoinClause.Type.RIGHT, table2, alias, on));
         return this;
     }
 
