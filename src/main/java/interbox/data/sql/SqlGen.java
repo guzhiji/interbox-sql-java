@@ -219,8 +219,10 @@ class SqlGen {
             } else {
                 String op = cond.logical.name().toLowerCase();
                 GenCtx c1 = new GenCtx(ctx);
+                cond.cond1.negated = false;
                 visitCond(cond.cond1, c1);
                 GenCtx c2 = new GenCtx(ctx);
+                cond.cond2.negated = false;
                 visitCond(cond.cond2, c2);
                 ctx.result = '(' + c1.result + ") " + op + " (" + c2.result + ')';
             }
@@ -238,6 +240,7 @@ class SqlGen {
                 if (sb.length() > 0)
                     sb.append(' ').append(op).append(' ');
                 GenCtx c = new GenCtx(ctx);
+                cond.negated = false;
                 visitCond(cond, c);
                 sb.append('(').append(c.result).append(')');
             }

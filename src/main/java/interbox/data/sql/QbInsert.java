@@ -19,6 +19,18 @@ public class QbInsert {
         table = tableName;
     }
 
+    QbInsert(String tableName, Class<?> tableClass) {
+        Objects.requireNonNull(tableClass);
+        table = tableName;
+        // TODO collect type info about each field
+    }
+
+    QbInsert(Class<?> tableClass) {
+        Objects.requireNonNull(tableClass);
+        table = null; // TODO get table name
+        // TODO collect type info about each field
+    }
+
     public QbInsert value(String field, Object value, int type) {
         assignments.add(new OAssign(field, value, type));
         return this;
