@@ -1,13 +1,16 @@
 package interbox.data.sql;
 
+import interbox.data.sql.annotations.Field;
+import interbox.data.sql.annotations.Table;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 class Utils {
@@ -96,6 +99,44 @@ class Utils {
                 LocalDateTime.class == cls)
             return Types.TIMESTAMP;
         return 0;
+    }
+
+    public static String getTableName(Class<?> cls) {
+        Table an = cls.getAnnotation(Table.class);
+        if (an == null)
+            return null;
+        return an.value();
+    }
+
+    private final static Map<String, Map<String, Integer>> classMetaCache = new ConcurrentHashMap<>();
+
+    static Map<String, Integer> getFieldMeta(Class<?> cls) {
+        Map<String, Integer> fields = new HashMap<>();
+        for (java.lang.reflect.Field field : cls.getDeclaredFields()) {
+            Field an = field.getAnnotation(Field.class);
+            String fieldName;
+            int fieldType;
+            if (an == null) {
+                fieldName = toSnakeCase(field.getName());
+                fieldType = inferType(field.getType());
+            } else if (an.type() == 0) {
+                fieldName = an.value();
+                fieldType = inferType(field.getType());
+            } else {
+                fieldName = an.value();
+                fieldType = an.type();
+            }
+            fields.put(fieldName, fieldType);
+        }
+        Class<?> scls = cls.getSuperclass();
+        if (scls != null && !scls.equals(Object.class)) {
+            Map<String, Integer> sf = getFieldMeta(scls);
+            for (Map.Entry<String, Integer> e : sf.entrySet()) {
+                if (!fields.containsKey(e.getKey()))
+                    fields.put(e.getKey(), e.getValue());
+            }
+        }
+        return fields;
     }
 
 }
