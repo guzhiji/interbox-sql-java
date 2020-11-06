@@ -19,26 +19,41 @@ class Utils {
         StringBuilder sb = new StringBuilder();
         Character pc = null;
         for (char c : s.toCharArray()) {
-            if (pc != null) {
-                if (Character.isUpperCase(pc)) {
-                    if (!Character.isUpperCase(c)) {
-                        // ABc,aBc: upper(B)->lower(c): a,bc
-                        if (sb.length() > 0) {
+            switch (c) {
+                case ' ':
+                case '-':
+                case '_':
+                    if (pc != null) {
+                        sb.append(pc);
+                        pc = null;
+                    }
+                    tokens.add(sb.toString());
+                    if (sb.length() > 0)
+                        sb = new StringBuilder();
+                    break;
+                default:
+                    if (pc != null) {
+                        if (Character.isUpperCase(pc)) {
+                            if (!Character.isUpperCase(c)) {
+                                // ABc,aBc: upper(B)->lower(c): a,bc
+                                if (sb.length() > 0) {
+                                    tokens.add(sb.toString());
+                                    sb = new StringBuilder();
+                                }
+                            }
+                            sb.append(Character.toLowerCase(pc));
+                        } else if (Character.isUpperCase(c)) {
+                            // aB: lower(a)->upper(B): a,b
+                            sb.append(pc);
                             tokens.add(sb.toString());
                             sb = new StringBuilder();
+                        } else {
+                            sb.append(pc);
                         }
                     }
-                    sb.append(Character.toLowerCase(pc));
-                } else if (Character.isUpperCase(c)) {
-                    // aB: lower(a)->upper(B): a,b
-                    sb.append(pc);
-                    tokens.add(sb.toString());
-                    sb = new StringBuilder();
-                } else {
-                    sb.append(pc);
-                }
+                    pc = c;
+                    break;
             }
-            pc = c;
         }
         if (pc != null) {
             sb.append(Character.toLowerCase(pc));
