@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 class Utils {
 
-    static String toSnakeCase(String s) {
+    public static String toSnakeCase(String s) {
         if (s == null)
             return null;
         List<String> tokens = new ArrayList<>();
@@ -65,7 +65,7 @@ class Utils {
         return String.join("_", tokens);
     }
 
-    static int inferType(Class<?> cls) {
+    public static int inferType(Class<?> cls) {
         if (cls == null)
             return 0;
         if (Short.TYPE == cls || Short.class == cls)
@@ -108,10 +108,20 @@ class Utils {
         return an.value();
     }
 
-    private final static Map<String, Map<String, Integer>> classMetaCache = new ConcurrentHashMap<>();
+    static class FieldMeta {
+        final String name;
+        final int type;
+        final java.lang.reflect.Field field;
 
-    static Map<String, Integer> getFieldMeta(Class<?> cls) {
-        Map<String, Integer> fields = new HashMap<>();
+        FieldMeta(String name, int type, java.lang.reflect.Field field) {
+            this.name = name;
+            this.type = type;
+            this.field = field;
+        }
+    }
+
+    static Map<String, FieldMeta> collectFieldMeta(Class<?> cls) {
+        Map<String, FieldMeta> fields = new HashMap<>();
         for (java.lang.reflect.Field field : cls.getDeclaredFields()) {
             Field an = field.getAnnotation(Field.class);
             String fieldName;
@@ -126,17 +136,32 @@ class Utils {
                 fieldName = an.value();
                 fieldType = an.type();
             }
-            fields.put(fieldName, fieldType);
+            fields.put(fieldName, new FieldMeta(
+                    fieldName, fieldType, field));
         }
         Class<?> scls = cls.getSuperclass();
         if (scls != null && !scls.equals(Object.class)) {
-            Map<String, Integer> sf = getFieldMeta(scls);
-            for (Map.Entry<String, Integer> e : sf.entrySet()) {
+            Map<String, FieldMeta> sf = collectFieldMeta(scls);
+            for (Map.Entry<String, FieldMeta> e : sf.entrySet()) {
                 if (!fields.containsKey(e.getKey()))
                     fields.put(e.getKey(), e.getValue());
             }
         }
         return fields;
+    }
+
+    private final static Map<Class<?>, Map<String, FieldMeta>> classMetaCache = new ConcurrentHashMap<>();
+
+    public static int getFieldType(Class<?> cls, String field) {
+        Map<String, FieldMeta> m = classMetaCache.get(cls);
+        if (m == null) {
+            m = collectFieldMeta(cls);
+            classMetaCache.put(cls, m);
+        }
+        FieldMeta f = m.get(field);
+        if (f != null)
+            return f.type;
+        return 0;
     }
 
 }

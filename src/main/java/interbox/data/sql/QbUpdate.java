@@ -12,24 +12,29 @@ import java.util.Objects;
 
 public class QbUpdate {
     final String table;
+    final Class<?> tableClass;
     final List<Assignment> assignments = new ArrayList<>();
     QbCondClause where;
 
     QbUpdate(String tableName) {
         Objects.requireNonNull(tableName);
-        table = tableName;
+        this.table = tableName;
+        this.tableClass = null;
     }
 
     QbUpdate(String tableName, Class<?> tableClass) {
+        Objects.requireNonNull(tableName);
         Objects.requireNonNull(tableClass);
-        table = tableName;
-        // TODO collect type info about each field
+        this.table = tableName;
+        this.tableClass = tableClass;
     }
 
     QbUpdate(Class<?> tableClass) {
         Objects.requireNonNull(tableClass);
-        table = null; // TODO get table name
-        // TODO collect type info about each field
+        this.tableClass = tableClass;
+        this.table = Utils.getTableName(tableClass);
+        if (this.table == null)
+            throw new QbException("no Table annotation found on the table class");
     }
 
     public QbUpdate value(String field, Object value, int type) {
@@ -38,22 +43,27 @@ public class QbUpdate {
     }
 
     public QbUpdate value(String field, Object value) {
-
+        int type = 0;
+        if (this.tableClass != null) {
+            type = Utils.getFieldType(this.tableClass, field);
+        } else if (value != null) {
+            type = Utils.inferType(value.getClass());
+        }
+        if (type == 0)
+            throw new QbException("cannot determine value type");
+        assignments.add(new OAssign(field, value, type));
         return this;
     }
 
     public QbUpdate values(Map<String, ?> values) {
-
+        for (Map.Entry<String, ?> e : values.entrySet()) {
+            value(e.getKey(), e.getValue());
+        }
         return this;
     }
 
     public QbUpdate values(Object obj) {
-
-        return this;
-    }
-
-    public <T> QbUpdate values(T obj, Class<T> clz) {
-
+        // TODO
         return this;
     }
 

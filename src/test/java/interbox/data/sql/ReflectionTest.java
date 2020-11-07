@@ -18,10 +18,10 @@ public class ReflectionTest {
 
     @Test
     public void testGetFieldWithoutAnnotation() {
-        Map<String, Integer> m = Utils.getFieldMeta(A.class);
+        Map<String, Utils.FieldMeta> m = Utils.collectFieldMeta(A.class);
         assertEquals(1, m.size());
         assertTrue(m.containsKey("hello_world"));
-        assertEquals(Types.VARCHAR, m.get("hello_world").longValue());
+        assertEquals(Types.VARCHAR, m.get("hello_world").type);
     }
 
     private static class B {
@@ -36,12 +36,12 @@ public class ReflectionTest {
 
     @Test
     public void testGetFieldWithAnnotation() {
-        Map<String, Integer> m = Utils.getFieldMeta(B.class);
+        Map<String, Utils.FieldMeta> m = Utils.collectFieldMeta(B.class);
         assertEquals(2, m.size());
         assertTrue(m.containsKey("javascript"));
-        assertEquals(Types.VARCHAR, m.get("javascript").longValue());
+        assertEquals(Types.VARCHAR, m.get("javascript").type);
         assertTrue(m.containsKey("python"));
-        assertEquals(Types.INTEGER, m.get("python").longValue());
+        assertEquals(Types.INTEGER, m.get("python").type);
     }
 
     private static class C extends B {
@@ -54,14 +54,14 @@ public class ReflectionTest {
 
     @Test
     public void testGetFieldFromInheritedCls() {
-        Map<String, Integer> m = Utils.getFieldMeta(C.class);
+        Map<String, Utils.FieldMeta> m = Utils.collectFieldMeta(C.class);
         assertEquals(3, m.size());
         assertTrue(m.containsKey("javascript"));
-        assertEquals(Types.VARCHAR, m.get("javascript").longValue());
+        assertEquals(Types.VARCHAR, m.get("javascript").type);
         assertTrue(m.containsKey("python"));
-        assertEquals(Types.INTEGER, m.get("python").longValue());
+        assertEquals(Types.INTEGER, m.get("python").type);
         assertTrue(m.containsKey("c_sharp"));
-        assertEquals(Types.INTEGER, m.get("c_sharp").longValue());
+        assertEquals(Types.INTEGER, m.get("c_sharp").type);
     }
 
 }
