@@ -16,6 +16,13 @@ public class QbDelete {
         fromTable = tableName;
     }
 
+    QbDelete(Class<?> tableClass) {
+        Objects.requireNonNull(tableClass);
+        fromTable = Utils.getTableName(tableClass);
+        if (fromTable == null)
+            throw new QbException("no Table annotation found on the table class");
+    }
+
     public QbDelete where(QbCondClause cond) {
         if (this.where == null) {
             this.where = cond;

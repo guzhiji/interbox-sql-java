@@ -30,6 +30,15 @@ public class QbSelect {
         this.fromSubquery = null;
     }
 
+    QbSelect(Class<?> tableClass, String tableAlias) {
+        Objects.requireNonNull(tableClass);
+        this.fromTable = Utils.getTableName(tableClass);
+        if (this.fromTable == null)
+            throw new QbException("no Table annotation found on the table class");
+        this.fromAlias = tableAlias;
+        this.fromSubquery = null;
+    }
+
     QbSelect(QbSelect table, String tableAlias) {
         Objects.requireNonNull(table);
         Objects.requireNonNull(tableAlias);

@@ -54,6 +54,14 @@ public class QueryBuilder {
         return new QbSelect(tableName, null);
     }
 
+    public static QbSelect selectFrom(Class<?> tableClass, String tableAlias) {
+        return new QbSelect(tableClass, tableAlias);
+    }
+
+    public static QbSelect selectFrom(Class<?> tableClass) {
+        return new QbSelect(tableClass, null);
+    }
+
     public static QbSelect selectFrom(QbSelect table, String tableAlias) {
         return new QbSelect(table, tableAlias);
     }
@@ -62,12 +70,32 @@ public class QueryBuilder {
         return new QbDelete(tableName);
     }
 
+    public static QbDelete deleteFrom(Class<?> tableClass) {
+        return new QbDelete(tableClass);
+    }
+
     public static QbUpdate update(String tableName) {
         return new QbUpdate(tableName);
     }
 
+    public static QbUpdate update(String tableName, Class<?> tableClass) {
+        return new QbUpdate(tableName, tableClass);
+    }
+
+    public static QbUpdate update(Class<?> tableClass) {
+        return new QbUpdate(tableClass);
+    }
+
     public static QbInsert insertInto(String tableName) {
         return new QbInsert(tableName);
+    }
+
+    public static QbInsert insertInto(String tableName, Class<?> tableClass) {
+        return new QbInsert(tableName, tableClass);
+    }
+
+    public static QbInsert insertInto(Class<?> tableClass) {
+        return new QbInsert(tableClass);
     }
 
     public static QbCondClause cond(String expr) {
