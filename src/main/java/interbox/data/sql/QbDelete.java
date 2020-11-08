@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.util.Objects;
 
 
-public class QbDelete {
+public final class QbDelete {
     final String fromTable;
     QbCondClause where;
 

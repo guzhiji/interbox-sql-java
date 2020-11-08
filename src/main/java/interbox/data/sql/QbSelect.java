@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Objects;
 
 
-public class QbSelect {
+public final class QbSelect {
 
     boolean distinct = false;
     final List<FieldExpr> fields = new ArrayList<>();
@@ -214,6 +214,8 @@ public class QbSelect {
                 stmt.setObject(i + 1, p);
             }
             try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                }
                 return Collections.emptyList(); // TODO data mapping
             }
         } catch (SQLException e) {

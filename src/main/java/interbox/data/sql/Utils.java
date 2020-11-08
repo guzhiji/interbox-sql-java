@@ -150,18 +150,43 @@ class Utils {
         return fields;
     }
 
-    private final static Map<Class<?>, Map<String, FieldMeta>> classMetaCache = new ConcurrentHashMap<>();
+    private final static Map<Class<?>, Map<String, FieldMeta>> fieldMetaCache = new ConcurrentHashMap<>();
 
-    public static int getFieldType(Class<?> cls, String field) {
-        Map<String, FieldMeta> m = classMetaCache.get(cls);
+    static Map<String, FieldMeta> getFieldMeta(Class<?> cls) {
+        Map<String, FieldMeta> m = fieldMetaCache.get(cls);
         if (m == null) {
             m = collectFieldMeta(cls);
-            classMetaCache.put(cls, m);
+            fieldMetaCache.put(cls, m);
         }
+        return m;
+    }
+
+    public static int getFieldType(Class<?> cls, String field) {
+        Map<String, FieldMeta> m = getFieldMeta(cls);
         FieldMeta f = m.get(field);
         if (f != null)
             return f.type;
         return 0;
+    }
+
+    public static List<OAssign> objectToAssignments(Object obj) {
+        try {
+            List<OAssign> out = new ArrayList<>();
+            Map<String, FieldMeta> m = getFieldMeta(obj.getClass());
+            for (FieldMeta f : m.values()) {
+                if (f.type == 0)
+                    continue;
+                f.field.setAccessible(true);
+                try {
+                    out.add(new OAssign(f.name, f.field.get(obj), f.type));
+                } finally {
+                    f.field.setAccessible(false);
+                }
+            }
+            return out;
+        } catch (Throwable th) {
+            throw new QbException("fail to access values from object", th);
+        }
     }
 
 }

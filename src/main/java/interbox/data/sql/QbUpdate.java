@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 
 
-public class QbUpdate {
+public final class QbUpdate {
     final String table;
     final Class<?> tableClass;
     final List<Assignment> assignments = new ArrayList<>();
@@ -63,7 +63,8 @@ public class QbUpdate {
     }
 
     public QbUpdate values(Object obj) {
-        // TODO
+        Objects.requireNonNull(obj);
+        assignments.addAll(Utils.objectToAssignments(obj));
         return this;
     }
 

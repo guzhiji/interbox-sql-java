@@ -3,7 +3,7 @@ package interbox.data.sql;
 import java.util.*;
 
 
-public class QueryBuilder {
+public final class QueryBuilder {
 
     public enum Order {
         ASC, DESC
@@ -137,7 +137,7 @@ public class QueryBuilder {
     private static QbCondClause convCondList(Logical logical, List<QbCondClause> condList) {
         int n = condList.size();
         if (n == 0)
-            throw new IllegalArgumentException("empty condition list");
+            throw new QbException("empty condition list");
         if (n < 2)
             return condList.get(0);
         if (n == 2)

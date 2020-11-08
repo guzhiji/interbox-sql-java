@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 
 
-public class QbInsert {
+public final class QbInsert {
     final String table;
     final Class<?> tableClass;
     final List<Assignment> assignments = new ArrayList<>();
@@ -62,7 +62,8 @@ public class QbInsert {
     }
 
     public QbInsert values(Object obj) {
-        // TODO
+        Objects.requireNonNull(obj);
+        assignments.addAll(Utils.objectToAssignments(obj));
         return this;
     }
 
