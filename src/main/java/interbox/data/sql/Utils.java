@@ -189,4 +189,43 @@ class Utils {
         }
     }
 
+    public static <T> T resultSetToObject(ResultSet rs, Class<T> cls) {
+        try {
+            T obj = cls.newInstance();
+            Map<String, FieldMeta> m = getFieldMeta(cls);
+            for (FieldMeta f : m.values()) {
+                f.field.setAccessible(true);
+                try {
+                    f.field.set(obj, rs.getObject(f.name));
+                } catch (SQLException ignored) {
+                } finally {
+                    f.field.setAccessible(false);
+                }
+            }
+            return obj;
+        } catch (InstantiationException e) {
+            throw new QbException("fail to create object for the class " + cls.toString(), e);
+        } catch (Throwable th) {
+            throw new QbException("fail to map values to object of the class " + cls.toString(), th);
+        }
+    }
+
+    public static <T> T resultSetFirstCol(ResultSet rs, Class<T> type) {
+        try {
+            return rs.getObject(1, type);
+        } catch (SQLException th) {
+            throw new QbException("fail to read first column of result set", th);
+        }
+    }
+
+    public static void setStmtParams(PreparedStatement stmt, GenCtx genCtx) throws SQLException {
+        for (int i = 0; i < genCtx.params.size(); i++) {
+            Param p = genCtx.params.get(i);
+            if (p.type == null)
+                stmt.setObject(i + 1, p.value);
+            else
+                stmt.setObject(i + 1, p.value, p.type);
+        }
+    }
+
 }

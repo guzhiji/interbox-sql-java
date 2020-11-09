@@ -6,7 +6,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -161,10 +160,7 @@ public final class QbSelect {
     public boolean exists(Connection conn) {
         GenCtx genCtx = genSql();
         try (PreparedStatement stmt = conn.prepareStatement(genCtx.result)) {
-            for (int i = 0; i < genCtx.params.size(); i++) {
-                Object p = genCtx.params.get(i).value;
-                stmt.setObject(i + 1, p);
-            }
+            Utils.setStmtParams(stmt, genCtx);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next();
             }
@@ -184,14 +180,13 @@ public final class QbSelect {
     public <T> T findOne(Connection conn, Class<T> cls) {
         GenCtx genCtx = genSql();
         try (PreparedStatement stmt = conn.prepareStatement(genCtx.result)) {
-            for (int i = 0; i < genCtx.params.size(); i++) {
-                Object p = genCtx.params.get(i).value;
-                stmt.setObject(i + 1, p);
-            }
+            Utils.setStmtParams(stmt, genCtx);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (!rs.next())
                     return null;
-                return null; // TODO data mapping
+                if (Utils.inferType(cls) == 0)
+                    return Utils.resultSetToObject(rs, cls);
+                return Utils.resultSetFirstCol(rs, cls);
             }
         } catch (SQLException e) {
             throw new QbException("sql error", e);
@@ -209,14 +204,17 @@ public final class QbSelect {
     public <T> List<T> findAll(Connection conn, Class<T> cls) {
         GenCtx genCtx = genSql();
         try (PreparedStatement stmt = conn.prepareStatement(genCtx.result)) {
-            for (int i = 0; i < genCtx.params.size(); i++) {
-                Object p = genCtx.params.get(i).value;
-                stmt.setObject(i + 1, p);
-            }
+            Utils.setStmtParams(stmt, genCtx);
             try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
+                List<T> out = new ArrayList<>();
+                if (Utils.inferType(cls) == 0) {
+                    while (rs.next())
+                        out.add(Utils.resultSetToObject(rs, cls));
+                } else {
+                    while (rs.next())
+                        out.add(Utils.resultSetFirstCol(rs, cls));
                 }
-                return Collections.emptyList(); // TODO data mapping
+                return out;
             }
         } catch (SQLException e) {
             throw new QbException("sql error", e);

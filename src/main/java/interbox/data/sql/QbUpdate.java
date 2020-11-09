@@ -102,13 +102,7 @@ public final class QbUpdate {
     public int execute(Connection conn) {
         GenCtx genCtx = genSql();
         try (PreparedStatement stmt = conn.prepareStatement(genCtx.result)) {
-            for (int i = 0; i < genCtx.params.size(); i++) {
-                Param p = genCtx.params.get(i);
-                if (p.type == null)
-                    stmt.setObject(i + 1, p.value);
-                else
-                    stmt.setObject(i + 1, p.value, p.type);
-            }
+            Utils.setStmtParams(stmt, genCtx);
             return stmt.executeUpdate();
         } catch (SQLException e) {
             throw new QbException("sql error", e);
