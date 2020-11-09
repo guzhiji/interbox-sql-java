@@ -11,4 +11,10 @@ public class QbException extends RuntimeException {
         super(msg);
     }
 
+    public static class NoResult extends QbException {
+        public NoResult() {
+            super("no result found");
+        }
+    }
+
 }

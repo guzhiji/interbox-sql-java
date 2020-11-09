@@ -183,7 +183,7 @@ public final class QbSelect {
             Utils.setStmtParams(stmt, genCtx);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (!rs.next())
-                    return null;
+                    throw new QbException.NoResult();
                 if (Utils.inferType(cls) == 0)
                     return Utils.resultSetToObject(rs, cls);
                 return Utils.resultSetFirstCol(rs, cls);
