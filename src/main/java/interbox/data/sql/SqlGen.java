@@ -1,6 +1,7 @@
 package interbox.data.sql;
 
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 
 class SqlGen {
@@ -176,8 +177,12 @@ class SqlGen {
                 visitSCompCond((SCompCond) cond, obj);
             } else if (cond instanceof OCompCond) {
                 visitOCompCond((OCompCond) cond, obj);
-            } else if (cond instanceof InCond) {
-                visitInCond((InCond) cond, obj);
+            } else if (cond instanceof InSubqueryCond) {
+                visitInSubqueryCond((InSubqueryCond) cond, obj);
+            } else if (cond instanceof InSArrayCond) {
+                visitInSArrayCond((InSArrayCond) cond, obj);
+            } else if (cond instanceof InOArrayCond) {
+                visitInOArrayCond((InOArrayCond) cond, obj);
             } else if (cond instanceof ExistsCond) {
                 visitExistsCond((ExistsCond) cond, obj);
             }
@@ -305,7 +310,7 @@ class SqlGen {
         ctx.result = e;
     }
 
-    public void visitInCond(InCond cond, Object obj) {
+    public void visitInSubqueryCond(InSubqueryCond cond, Object obj) {
         GenCtx ctx = (GenCtx) obj;
         String e = cond.expr;
         if (cond.negated)
@@ -315,6 +320,41 @@ class SqlGen {
         GenCtx inCtx = new GenCtx(ctx);
         visitSelect(cond.subquery, inCtx);
         e += '(' + inCtx.result + ')';
+        ctx.result = e;
+    }
+
+    public void visitInSArrayCond(InSArrayCond cond, Object obj) {
+        GenCtx ctx = (GenCtx) obj;
+        String e = cond.expr;
+        if (cond.negated)
+            e += " not in ";
+        else
+            e += " in ";
+        String placeHolders;
+        if (cond.asExpr) {
+            placeHolders = String.join(",", cond.values);
+        } else {
+            placeHolders = cond.values.stream()
+                    .peek(ctx::addParam)
+                    .map(v -> "?")
+                    .collect(Collectors.joining(","));
+        }
+        e += '(' + placeHolders + ')';
+        ctx.result = e;
+    }
+
+    public void visitInOArrayCond(InOArrayCond cond, Object obj) {
+        GenCtx ctx = (GenCtx) obj;
+        String e = cond.expr;
+        if (cond.negated)
+            e += " not in ";
+        else
+            e += " in ";
+        String placeHolders = cond.values.stream()
+                .peek(ctx::addParam)
+                .map(v -> "?")
+                .collect(Collectors.joining(","));
+        e += '(' + placeHolders + ')';
         ctx.result = e;
     }
 

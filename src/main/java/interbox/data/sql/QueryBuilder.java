@@ -106,28 +106,96 @@ public final class QueryBuilder {
         return new OCompCond(Comp.EQ, expr, value);
     }
 
+    public static <E, R> QbCondClause eq(SerializedFunction<E, R> methodRef, Object value) {
+        return eq(Utils.getTableFieldName(methodRef), value);
+    }
+
     public static QbCondClause eq(String expr, String str) {
         return new SCompCond(Comp.EQ, expr, str, false);
     }
 
-    public static QbCondClause eq(String expr, String str, boolean asExpr) {
-        return new SCompCond(Comp.EQ, expr, str, asExpr);
+    public static <E, R> QbCondClause eq(SerializedFunction<E, R> methodRef, String str) {
+        return eq(Utils.getTableFieldName(methodRef), str);
+    }
+
+    public static QbCondClause eqExpr(String expr, String expr2) {
+        return new SCompCond(Comp.EQ, expr, expr2, true);
+    }
+
+    public static <E, R> QbCondClause eqExpr(SerializedFunction<E, R> methodRef, String expr) {
+        return eqExpr(Utils.getTableFieldName(methodRef), expr);
     }
 
     public static QbCondClause compare(Comp comp, String expr, Object value) {
         return new OCompCond(comp, expr, value);
     }
 
+    public static <E, R> QbCondClause compare(Comp comp, SerializedFunction<E, R> methodRef, Object value) {
+        return compare(comp, Utils.getTableFieldName(methodRef), value);
+    }
+
     public static QbCondClause compare(Comp comp, String expr, String str) {
         return new SCompCond(comp, expr, str, false);
     }
 
-    public static QbCondClause compare(Comp comp, String expr, String str, boolean asExpr) {
-        return new SCompCond(comp, expr, str, asExpr);
+    public static <E, R> QbCondClause compare(Comp comp, SerializedFunction<E, R> methodRef, String str) {
+        return compare(comp, Utils.getTableFieldName(methodRef), str);
+    }
+
+    public static QbCondClause compareExpr(Comp comp, String expr, String expr2) {
+        return new SCompCond(comp, expr, expr2, true);
+    }
+
+    public static <E, R> QbCondClause compareExpr(Comp comp, SerializedFunction<E, R> methodRef, String expr) {
+        return compareExpr(comp, Utils.getTableFieldName(methodRef), expr);
     }
 
     public static QbCondClause in(String expr, QbSelect table2) {
-        return new InCond(expr, table2);
+        return new InSubqueryCond(expr, table2);
+    }
+
+    public static <E, R> QbCondClause in(SerializedFunction<E, R> methodRef, QbSelect table2) {
+        return in(Utils.getTableFieldName(methodRef), table2);
+    }
+
+    public static QbCondClause in(String expr, List<Object> values) {
+        return new InOArrayCond(expr, values);
+    }
+
+    public static <E, R> QbCondClause in(SerializedFunction<E, R> methodRef, List<Object> values) {
+        return in(Utils.getTableFieldName(methodRef), values);
+    }
+
+    public static QbCondClause in(String expr, Object... values) {
+        return new InOArrayCond(expr, values);
+    }
+
+    public static <E, R> QbCondClause in(SerializedFunction<E, R> methodRef, Object... values) {
+        return in(Utils.getTableFieldName(methodRef), values);
+    }
+
+    public static QbCondClause in(String expr, String... values) {
+        return new InSArrayCond(expr, false, values);
+    }
+
+    public static <E, R> QbCondClause in(SerializedFunction<E, R> methodRef, String... values) {
+        return in(Utils.getTableFieldName(methodRef), values);
+    }
+
+    public static QbCondClause inExprs(String expr, List<String> exprs) {
+        return new InSArrayCond(expr, true, exprs);
+    }
+
+    public static <E, R> QbCondClause inExprs(SerializedFunction<E, R> methodRef, List<String> exprs) {
+        return inExprs(Utils.getTableFieldName(methodRef), exprs);
+    }
+
+    public static QbCondClause inExprs(String expr, String... exprs) {
+        return new InSArrayCond(expr, true, exprs);
+    }
+
+    public static <E, R> QbCondClause inExprs(SerializedFunction<E, R> methodRef, String... exprs) {
+        return inExprs(Utils.getTableFieldName(methodRef), exprs);
     }
 
     public static QbCondClause exists(QbSelect table2) {

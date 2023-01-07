@@ -3,6 +3,8 @@ package interbox.data.sql;
 import interbox.data.sql.annotations.Field;
 import interbox.data.sql.annotations.Table;
 
+import java.lang.invoke.SerializedLambda;
+import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
@@ -65,9 +67,25 @@ class Utils {
         return String.join("_", tokens);
     }
 
+    public static String methodNameToFieldName(String method) {
+        String field;
+        if ((method.startsWith("set") || method.startsWith("get")) && method.length() > 3) {
+            field = method.substring(3);
+        } else if (method.startsWith("is") && method.length() > 2) {
+            field = method.substring(2);
+        } else {
+            field = method;
+        }
+        char firstChar = field.charAt(0);
+        if (Character.isUpperCase(firstChar)) {
+            return Character.toLowerCase(firstChar) + field.substring(1);
+        }
+        return field;
+    }
+
     public static int inferType(Class<?> cls) {
         if (cls == null)
-            return 0;
+            return 0; // for unknown, not null
         if (Short.TYPE == cls || Short.class == cls)
             return Types.INTEGER;
         if (Integer.TYPE == cls || Integer.class == cls)
@@ -161,32 +179,60 @@ class Utils {
         return m;
     }
 
-    public static int getFieldType(Class<?> cls, String field) {
+    public static int getFieldType(Class<?> cls, String tableField) {
         Map<String, FieldMeta> m = getFieldMeta(cls);
-        FieldMeta f = m.get(field);
+        FieldMeta f = m.get(tableField);
         if (f != null)
             return f.type;
         return 0;
     }
 
-    public static List<OAssign> objectToAssignments(Object obj) {
+    static SerializedLambda methodRefToSerializedLambda(SerializedFunction<?, ?> methodRef) {
         try {
-            List<OAssign> out = new ArrayList<>();
-            Map<String, FieldMeta> m = getFieldMeta(obj.getClass());
-            for (FieldMeta f : m.values()) {
-                if (f.type == 0)
-                    continue;
-                f.field.setAccessible(true);
-                try {
-                    out.add(new OAssign(f.name, f.field.get(obj), f.type));
-                } finally {
-                    f.field.setAccessible(false);
-                }
+            Method m = methodRef.getClass().getDeclaredMethod("writeReplace");
+            boolean a = m.isAccessible();
+            m.setAccessible(true);
+            try {
+                return (SerializedLambda) m.invoke(methodRef);
+            } finally {
+                m.setAccessible(a);
             }
-            return out;
         } catch (Throwable th) {
-            throw new QbException("fail to access values from object", th);
+            throw new QbException("fail to read method reference", th);
         }
+    }
+
+    static Class<?> typeDescriptorToClass(String typeDescriptor) {
+        try {
+            String className = typeDescriptor
+                    .substring(2, typeDescriptor.indexOf(";"))
+                    .replace("/", ".");
+            return Class.forName(className);
+        } catch (Throwable th) {
+            throw new QbException("cannot get class for " + typeDescriptor, th);
+        }
+    }
+
+    public static <E, R> String getTableFieldName(SerializedFunction<E, R> methodRef) {
+        SerializedLambda lambda = methodRefToSerializedLambda(methodRef);
+        Class<?> clz = typeDescriptorToClass(lambda.getInstantiatedMethodType());
+        String objField = methodNameToFieldName(lambda.getImplMethodName());
+        for (FieldMeta fm : getFieldMeta(clz).values()) {
+            if (fm.field.getName().equals(objField))
+                return fm.name;
+        }
+        throw new QbException("cannot find field " + objField + " in class " + clz);
+    }
+
+    public static List<OAssign> objectToAssignments(Object obj) {
+        List<OAssign> out = new ArrayList<>();
+        Map<String, FieldMeta> m = getFieldMeta(obj.getClass());
+        for (FieldMeta f : m.values()) {
+            if (f.type == 0)
+                continue;
+            out.add(new OAssign(f.name, getFieldValue(obj, f.field), f.type));
+        }
+        return out;
     }
 
     public static <T> T resultSetToObject(ResultSet rs, Class<T> cls) {
@@ -194,13 +240,7 @@ class Utils {
             T obj = cls.newInstance();
             Map<String, FieldMeta> m = getFieldMeta(cls);
             for (FieldMeta f : m.values()) {
-                f.field.setAccessible(true);
-                try {
-                    f.field.set(obj, rs.getObject(f.name));
-                } catch (SQLException ignored) {
-                } finally {
-                    f.field.setAccessible(false);
-                }
+                setFieldValue(obj, f.field, rs.getObject(f.name));
             }
             return obj;
         } catch (InstantiationException e) {
@@ -225,6 +265,30 @@ class Utils {
                 stmt.setObject(i + 1, p.value);
             else
                 stmt.setObject(i + 1, p.value, p.type);
+        }
+    }
+
+    public static void setFieldValue(Object obj, java.lang.reflect.Field field, Object value) {
+        boolean a = field.isAccessible();
+        field.setAccessible(true);
+        try {
+            field.set(obj, value);
+        } catch (IllegalAccessException e) {
+            throw new QbException("fail to write value into object", e);
+        } finally {
+            field.setAccessible(a);
+        }
+    }
+
+    public static Object getFieldValue(Object obj, java.lang.reflect.Field field) {
+        boolean a = field.isAccessible();
+        field.setAccessible(true);
+        try {
+            return field.get(obj);
+        } catch (IllegalAccessException e) {
+            throw new QbException("fail to read value from object", e);
+        } finally {
+            field.setAccessible(a);
         }
     }
 

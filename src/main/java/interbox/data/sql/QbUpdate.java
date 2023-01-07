@@ -34,7 +34,7 @@ public final class QbUpdate {
         this.tableClass = tableClass;
         this.table = Utils.getTableName(tableClass);
         if (this.table == null)
-            throw new QbException("no Table annotation found on the table class");
+            throw new QbException("no Table annotation found on the given table class");
     }
 
     public QbUpdate value(String field, Object value, int type) {
@@ -42,17 +42,25 @@ public final class QbUpdate {
         return this;
     }
 
+    public <E, R> QbUpdate value(SerializedFunction<E, R> methodRef, Object value, int type) {
+        return value(Utils.getTableFieldName(methodRef), value, type);
+    }
+
     public QbUpdate value(String field, Object value) {
-        int type = 0;
+        int type;
         if (this.tableClass != null) {
             type = Utils.getFieldType(this.tableClass, field);
         } else if (value != null) {
             type = Utils.inferType(value.getClass());
+        } else {
+            type = 0; // null
         }
-        if (type == 0)
-            throw new QbException("cannot determine value type");
         assignments.add(new OAssign(field, value, type));
         return this;
+    }
+
+    public <E, R> QbUpdate value(SerializedFunction<E, R> methodRef, Object value) {
+        return value(Utils.getTableFieldName(methodRef), value);
     }
 
     public QbUpdate values(Map<String, ?> values) {
@@ -71,6 +79,10 @@ public final class QbUpdate {
     public QbUpdate expr(String field, String expr) {
         assignments.add(new SAssign(field, expr));
         return this;
+    }
+
+    public <E, R> QbUpdate expr(SerializedFunction<E, R> methodRef, String expr) {
+        return expr(Utils.getTableFieldName(methodRef), expr);
     }
 
     public QbUpdate where(QbCondClause cond) {

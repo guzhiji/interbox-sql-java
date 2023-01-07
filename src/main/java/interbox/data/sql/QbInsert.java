@@ -33,7 +33,7 @@ public final class QbInsert {
         this.tableClass = tableClass;
         this.table = Utils.getTableName(tableClass);
         if (this.table == null)
-            throw new QbException("no Table annotation found on the table class");
+            throw new QbException("no Table annotation found on the given table class");
     }
 
     public QbInsert value(String field, Object value, int type) {
@@ -41,17 +41,25 @@ public final class QbInsert {
         return this;
     }
 
+    public <E, R> QbInsert value(SerializedFunction<E, R> methodRef, Object value, int type) {
+        return value(Utils.getTableFieldName(methodRef), value, type);
+    }
+
     public QbInsert value(String field, Object value) {
-        int type = 0;
+        int type;
         if (this.tableClass != null) {
             type = Utils.getFieldType(this.tableClass, field);
         } else if (value != null) {
             type = Utils.inferType(value.getClass());
+        } else {
+            type = 0; // null
         }
-        if (type == 0)
-            throw new QbException("cannot determine value type");
         assignments.add(new OAssign(field, value, type));
         return this;
+    }
+
+    public <E, R> QbInsert value(SerializedFunction<E, R> methodRef, Object value) {
+        return value(Utils.getTableFieldName(methodRef), value);
     }
 
     public QbInsert values(Map<String, ?> values) {
@@ -70,6 +78,10 @@ public final class QbInsert {
     public QbInsert expr(String field, String expr) {
         assignments.add(new SAssign(field, expr));
         return this;
+    }
+
+    public <E, R> QbInsert expr(SerializedFunction<E, R> methodRef, String expr) {
+        return expr(Utils.getTableFieldName(methodRef), expr);
     }
 
     //-------------------------------------

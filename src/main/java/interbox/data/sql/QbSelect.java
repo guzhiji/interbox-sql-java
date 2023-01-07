@@ -55,9 +55,17 @@ public final class QbSelect {
         return field(fieldExpr, null);
     }
 
+    public <E, R> QbSelect field(SerializedFunction<E, R> methodRef) {
+        return field(Utils.getTableFieldName(methodRef));
+    }
+
     public QbSelect field(String fieldExpr, String fieldAlias) {
         fields.add(new FieldExpr(fieldExpr, fieldAlias));
         return this;
+    }
+
+    public <E, R> QbSelect field(SerializedFunction<E, R> methodRef, String fieldAlias) {
+        return field(Utils.getTableFieldName(methodRef), fieldAlias);
     }
 
     public QbSelect innerJoin(String table2, QbCondClause on) {
@@ -115,20 +123,36 @@ public final class QbSelect {
         return groupBy(field, null);
     }
 
+    public <E, R> QbSelect groupBy(SerializedFunction<E, R> methodRef) {
+        return groupBy(Utils.getTableFieldName(methodRef));
+    }
+
     public QbSelect groupBy(String field, QbCondClause having) {
         Objects.requireNonNull(field);
         groupBys.add(new GroupByClause(field, having));
         return this;
     }
 
+    public <E, R> QbSelect groupBy(SerializedFunction<E, R> methodRef, QbCondClause having) {
+        return groupBy(Utils.getTableFieldName(methodRef), having);
+    }
+
     public QbSelect orderBy(String field) {
         return orderBy(field, null);
+    }
+
+    public <E, R> QbSelect orderBy(SerializedFunction<E, R> methodRef) {
+        return orderBy(Utils.getTableFieldName(methodRef));
     }
 
     public QbSelect orderBy(String field, QueryBuilder.Order order) {
         Objects.requireNonNull(field);
         orderBys.add(new OrderBy(field, order));
         return this;
+    }
+
+    public <E, R> QbSelect orderBy(SerializedFunction<E, R> methodRef, QueryBuilder.Order order) {
+        return orderBy(Utils.getTableFieldName(methodRef), order);
     }
 
     public QbSelect where(QbCondClause cond) {
@@ -207,7 +231,7 @@ public final class QbSelect {
             Utils.setStmtParams(stmt, genCtx);
             try (ResultSet rs = stmt.executeQuery()) {
                 List<T> out = new ArrayList<>();
-                if (Utils.inferType(cls) == 0) {
+                if (Utils.inferType(cls) == 0) { // not a value, possibly an entity
                     while (rs.next())
                         out.add(Utils.resultSetToObject(rs, cls));
                 } else {

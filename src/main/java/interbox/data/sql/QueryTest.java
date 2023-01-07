@@ -34,7 +34,7 @@ public class QueryTest {
                                 .field("person_id", "personId")
                                 .field("group_id", "groupId")
                                 .where(QueryBuilder.eq("type", "lecture")), "p",
-                        QueryBuilder.eq("p.person_id", "person.id", true))
+                        QueryBuilder.eqExpr("p.person_id", "person.id"))
                 .field("p.groupId", "groupId")
                 .field("person.id", "id")
                 .field("person.name", "name")
