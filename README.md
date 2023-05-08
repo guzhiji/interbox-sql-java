@@ -5,6 +5,7 @@
 
 ```java
 @Data
+@Table("person")
 class Person {
     private String id;
     private String name;
@@ -18,6 +19,12 @@ public class Test {
         return QueryBuilder.selectFrom("person")
                 .field("name", "name")
                 .orderBy("name", QueryBuilder.Order.ASC)
+                .findAll(ds, Person.class);
+    }
+    public List<Person> listPeople2(DataSource ds) {
+        return QueryBuilder.selectFrom(Person.class)
+                .field(Person::getName, "name")
+                .orderBy(Person::getName, QueryBuilder.Order.ASC)
                 .findAll(ds, Person.class);
     }
 }
@@ -71,6 +78,18 @@ public class Test {
                 .where(QueryBuilder.eq("name", name))
                 .execute(ds);
     }
+    public void updateByName(DataSource ds, String name, Person person) {
+        QueryBuilder.update(Person.class)
+                .values(person)
+                .where(QueryBuilder.eq(Person::getName, name))
+                .execute(ds);
+    }
+    public void updateByNameDemo(DataSource ds) {
+        Person person = new Person();
+        // ...
+        person.setAge(10);
+        updateByName(ds, "tom", person);
+    }
 }
 ```
 
@@ -78,7 +97,7 @@ public class Test {
 
 ```java
 public class Test {
-    public void deletePerson(DataSource ds, int id) {
+    public void deletePerson(DataSource ds, String id) {
         try (Connection conn = ds.getConnection()) {
             QueryBuilder.deleteFrom("person")
                     .where(QueryBuilder.eq("id", id))
@@ -87,3 +106,4 @@ public class Test {
     }
 }
 ```
+
