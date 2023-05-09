@@ -1,14 +1,15 @@
 package interbox.data.sql;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 
 class InOArrayCond extends QbCondClause {
     final String expr;
-    final List<Object> values;
+    final Collection<Object> values;
 
-    InOArrayCond(String expr, List<Object> values) {
+    InOArrayCond(String expr, Collection<Object> values) {
         this.expr = expr;
         this.values = values;
     }

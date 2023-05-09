@@ -13,8 +13,7 @@ public final class QueryBuilder {
         EQ("="), NEQ("<>"),
         LT("<"), LTE("<="),
         GT(">"), GTE(">="),
-        LIKE("like"), NOT_LIKE("not like"),
-        IN("in"), NOT_IN("not in");
+        LIKE("like"), NOT_LIKE("not like");
 
         private final static Map<Comp, Comp> NEGATION_MAP;
         static {
@@ -27,8 +26,6 @@ public final class QueryBuilder {
             m.put(LTE, GT);
             m.put(LIKE, NOT_LIKE);
             m.put(NOT_LIKE, LIKE);
-            m.put(IN, NOT_IN);
-            m.put(NOT_IN, IN);
             NEGATION_MAP = Collections.unmodifiableMap(m);
         }
 
@@ -98,32 +95,206 @@ public final class QueryBuilder {
         return new QbInsert(tableClass);
     }
 
+    /**
+     * free-style condition.
+     *
+     * @param expr      a sql expression
+     * @return
+     */
     public static QbCondClause cond(String expr) {
         return new ExprCond(expr);
     }
 
+    /**
+     * operator: equals (for an object value).
+     *
+     * @param expr      typically a field name
+     * @param value     the object value
+     * @return
+     */
     public static QbCondClause eq(String expr, Object value) {
         return new OCompCond(Comp.EQ, expr, value);
     }
 
+    /**
+     * operator: equals (for an object value, use method reference syntax).
+     *
+     * @param methodRef     method reference for the desired field
+     * @param value         the object value
+     * @return
+     * @param <E>           entity class
+     * @param <R>           field data type
+     */
     public static <E, R> QbCondClause eq(SerializedFunction<E, R> methodRef, Object value) {
         return eq(Utils.getTableFieldName(methodRef), value);
     }
 
+    /**
+     * operator: not equals (for an object value).
+     *
+     * @param expr      typically a field name
+     * @param value     the object value
+     * @return
+     */
+    public static QbCondClause notEq(String expr, Object value) {
+        return new OCompCond(Comp.NEQ, expr, value);
+    }
+
+    /**
+     * operator: not equals (for an object value, use method reference syntax).
+     *
+     * @param methodRef     method reference for the desired field
+     * @param value         the object value
+     * @return
+     * @param <E>           entity class
+     * @param <R>           field data type
+     */
+    public static <E, R> QbCondClause notEq(SerializedFunction<E, R> methodRef, Object value) {
+        return notEq(Utils.getTableFieldName(methodRef), value);
+    }
+
+    /**
+     * operator: equals (for a string value).
+     *
+     * @param expr      typically a field name
+     * @param str       the string value
+     * @return
+     */
     public static QbCondClause eq(String expr, String str) {
         return new SCompCond(Comp.EQ, expr, str, false);
     }
 
+    /**
+     * operator: equals (for a string value, use method reference syntax).
+     *
+     * @param methodRef     method reference for the desired field
+     * @param str           the string value
+     * @return
+     * @param <E>           entity class
+     * @param <R>           field data type
+     */
     public static <E, R> QbCondClause eq(SerializedFunction<E, R> methodRef, String str) {
         return eq(Utils.getTableFieldName(methodRef), str);
     }
 
+    /**
+     * operator: not equals (for a string value).
+     *
+     * @param expr      typically a field name
+     * @param str       the string value
+     * @return
+     */
+    public static QbCondClause notEq(String expr, String str) {
+        return new SCompCond(Comp.NEQ, expr, str, false);
+    }
+
+    /**
+     * operator: not equals (for a string value, use method reference syntax).
+     *
+     * @param methodRef     method reference for the desired field
+     * @param str           the string value
+     * @return
+     * @param <E>           entity class
+     * @param <R>           field data type
+     */
+    public static <E, R> QbCondClause notEq(SerializedFunction<E, R> methodRef, String str) {
+        return notEq(Utils.getTableFieldName(methodRef), str);
+    }
+
+    /**
+     * operator: equals (for an expression).
+     *
+     * @param expr      typically a field name
+     * @param expr2     the expression
+     * @return
+     */
     public static QbCondClause eqExpr(String expr, String expr2) {
         return new SCompCond(Comp.EQ, expr, expr2, true);
     }
 
+    /**
+     * operator: equals (for an expression, use method reference syntax).
+     *
+     * @param methodRef     method reference for the desired field
+     * @param expr          the expression
+     * @return
+     * @param <E>           entity class
+     * @param <R>           field data type
+     */
     public static <E, R> QbCondClause eqExpr(SerializedFunction<E, R> methodRef, String expr) {
         return eqExpr(Utils.getTableFieldName(methodRef), expr);
+    }
+
+    /**
+     * operator: not equals (for an expression).
+     *
+     * @param expr      typically a field name
+     * @param expr2     the expression
+     * @return
+     */
+    public static QbCondClause notEqExpr(String expr, String expr2) {
+        return new SCompCond(Comp.NEQ, expr, expr2, true);
+    }
+
+    /**
+     * operator: not equals (for an expression, use method reference syntax).
+     *
+     * @param methodRef     method reference for the desired field
+     * @param expr          the expression
+     * @return
+     * @param <E>           entity class
+     * @param <R>           field data type
+     */
+    public static <E, R> QbCondClause notEqExpr(SerializedFunction<E, R> methodRef, String expr) {
+        return notEqExpr(Utils.getTableFieldName(methodRef), expr);
+    }
+
+    /**
+     * operator: like.
+     *
+     * @param expr      typically a field name
+     * @param str       a string value
+     * @return
+     */
+    public static QbCondClause like(String expr, String str) {
+        return new SCompCond(Comp.LIKE, expr, str, false);
+    }
+
+    /**
+     * operator: like (use method reference syntax).
+     *
+     * @param methodRef     method reference for the desired field
+     * @param str           a string value
+     * @return
+     * @param <E>           entity class
+     * @param <R>           field data type
+     */
+    public static <E, R> QbCondClause like(SerializedFunction<E, R> methodRef, String str) {
+        return like(Utils.getTableFieldName(methodRef), str);
+    }
+
+    /**
+     * operator: not like.
+     *
+     * @param expr      typically a field name
+     * @param str       a string value
+     * @return
+     */
+    public static QbCondClause notLike(String expr, String str) {
+        return new SCompCond(Comp.NOT_LIKE, expr, str, false);
+    }
+
+    /**
+     * operator: not like (use method reference syntax).
+     *
+     * @param methodRef     method reference for the desired field
+     * @param str           a string value
+     * @return
+     * @param <E>           entity class
+     * @param <R>           field data type
+     */
+    public static <E, R> QbCondClause notLike(SerializedFunction<E, R> methodRef, String str) {
+        return notLike(Utils.getTableFieldName(methodRef), str);
     }
 
     public static QbCondClause compare(Comp comp, String expr, Object value) {
@@ -150,26 +321,74 @@ public final class QueryBuilder {
         return compareExpr(comp, Utils.getTableFieldName(methodRef), expr);
     }
 
+    /**
+     * operator: in (for subquery).
+     *
+     * @param expr      typically a field name
+     * @param table2    the subquery
+     * @return
+     */
     public static QbCondClause in(String expr, QbSelect table2) {
         return new InSubqueryCond(expr, table2);
     }
 
+    /**
+     * operator: in (for subquery, use method reference syntax).
+     *
+     * @param methodRef     method reference for the desired field
+     * @param table2        the subquery
+     * @return
+     * @param <E>           entity class
+     * @param <R>           field data type
+     */
     public static <E, R> QbCondClause in(SerializedFunction<E, R> methodRef, QbSelect table2) {
         return in(Utils.getTableFieldName(methodRef), table2);
     }
 
-    public static QbCondClause in(String expr, List<Object> values) {
+    /**
+     * operator: in (for a collection of values).
+     *
+     * @param expr      typically a field name
+     * @param values    the collection of values
+     * @return
+     */
+    public static QbCondClause in(String expr, Collection<Object> values) {
         return new InOArrayCond(expr, values);
     }
 
-    public static <E, R> QbCondClause in(SerializedFunction<E, R> methodRef, List<Object> values) {
+    /**
+     * operator: in (for a collection of values, use method reference syntax).
+     *
+     * @param methodRef     method reference for the desired field
+     * @param values        the collection of values
+     * @return
+     * @param <E>           entity class
+     * @param <R>           field data type
+     */
+    public static <E, R> QbCondClause in(SerializedFunction<E, R> methodRef, Collection<Object> values) {
         return in(Utils.getTableFieldName(methodRef), values);
     }
 
+    /**
+     * operator: in (for an array of values).
+     *
+     * @param expr      typically a field name
+     * @param values    the array of values
+     * @return
+     */
     public static QbCondClause in(String expr, Object... values) {
         return new InOArrayCond(expr, values);
     }
 
+    /**
+     * operator: in (for an array of values, use method reference syntax).
+     *
+     * @param methodRef     method reference for the desired field
+     * @param values        the array of values
+     * @return
+     * @param <E>           entity class
+     * @param <R>           field data type
+     */
     public static <E, R> QbCondClause in(SerializedFunction<E, R> methodRef, Object... values) {
         return in(Utils.getTableFieldName(methodRef), values);
     }
@@ -182,11 +401,27 @@ public final class QueryBuilder {
         return in(Utils.getTableFieldName(methodRef), values);
     }
 
-    public static QbCondClause inExprs(String expr, List<String> exprs) {
+    /**
+     * operator: in (for a collection of expressions).
+     *
+     * @param expr      typically a field name
+     * @param exprs     the collection of expressions
+     * @return
+     */
+    public static QbCondClause inExprs(String expr, Collection<String> exprs) {
         return new InSArrayCond(expr, true, exprs);
     }
 
-    public static <E, R> QbCondClause inExprs(SerializedFunction<E, R> methodRef, List<String> exprs) {
+    /**
+     * operator: in (for a collection of expressions, use method reference syntax).
+     *
+     * @param methodRef     method reference for the desired field
+     * @param exprs         the collection of expressions
+     * @return
+     * @param <E>           entity class
+     * @param <R>           field data type
+     */
+    public static <E, R> QbCondClause inExprs(SerializedFunction<E, R> methodRef, Collection<String> exprs) {
         return inExprs(Utils.getTableFieldName(methodRef), exprs);
     }
 
