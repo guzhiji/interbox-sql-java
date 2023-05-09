@@ -190,13 +190,8 @@ class Utils {
     static SerializedLambda methodRefToSerializedLambda(SerializedFunction<?, ?> methodRef) {
         try {
             Method m = methodRef.getClass().getDeclaredMethod("writeReplace");
-            boolean a = m.isAccessible();
-            m.setAccessible(true);
-            try {
-                return (SerializedLambda) m.invoke(methodRef);
-            } finally {
-                m.setAccessible(a);
-            }
+            if (!m.isAccessible()) m.setAccessible(true);
+            return (SerializedLambda) m.invoke(methodRef);
         } catch (Throwable th) {
             throw new QbException("fail to read method reference", th);
         }
@@ -269,26 +264,20 @@ class Utils {
     }
 
     public static void setFieldValue(Object obj, java.lang.reflect.Field field, Object value) {
-        boolean a = field.isAccessible();
-        field.setAccessible(true);
+        if (!field.isAccessible()) field.setAccessible(true);
         try {
             field.set(obj, value);
         } catch (IllegalAccessException e) {
             throw new QbException("fail to write value into object", e);
-        } finally {
-            field.setAccessible(a);
         }
     }
 
     public static Object getFieldValue(Object obj, java.lang.reflect.Field field) {
-        boolean a = field.isAccessible();
-        field.setAccessible(true);
+        if (!field.isAccessible()) field.setAccessible(true);
         try {
             return field.get(obj);
         } catch (IllegalAccessException e) {
             throw new QbException("fail to read value from object", e);
-        } finally {
-            field.setAccessible(a);
         }
     }
 
