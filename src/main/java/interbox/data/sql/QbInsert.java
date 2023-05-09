@@ -1,5 +1,8 @@
 package interbox.data.sql;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,6 +14,7 @@ import java.util.Objects;
 
 
 public final class QbInsert {
+    private final static Logger log = LoggerFactory.getLogger(QbInsert.class);
     final String table;
     final Class<?> tableClass;
     final List<Assignment> assignments = new ArrayList<>();
@@ -90,6 +94,7 @@ public final class QbInsert {
         GenCtx genCtx = new GenCtx();
         SqlGen gen = new SqlGen();
         gen.visitInsert(this, genCtx);
+        if (log.isDebugEnabled()) Utils.logGenCtx(log, genCtx);
         return genCtx;
     }
 

@@ -2,6 +2,7 @@ package interbox.data.sql;
 
 import interbox.data.sql.annotations.Field;
 import interbox.data.sql.annotations.Table;
+import org.slf4j.Logger;
 
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.*;
@@ -13,6 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 
 class Utils {
@@ -278,6 +280,18 @@ class Utils {
             return field.get(obj);
         } catch (IllegalAccessException e) {
             throw new QbException("fail to read value from object", e);
+        }
+    }
+
+    public static void logGenCtx(Logger log, GenCtx genCtx) {
+        log.debug("sql: {}", genCtx.result);
+        if (!genCtx.params.isEmpty()) {
+            String placeholders = genCtx.params.stream()
+                    .map(p -> "{}")
+                    .collect(Collectors.joining(","));
+            String msg = "sql params: " + placeholders;
+            Object[] values = genCtx.params.stream().map(p -> p.value).toArray();
+            log.debug(msg, values);
         }
     }
 

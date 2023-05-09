@@ -1,5 +1,8 @@
 package interbox.data.sql;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,6 +14,7 @@ import java.util.Objects;
 
 
 public final class QbSelect {
+    private final static Logger log = LoggerFactory.getLogger(QbSelect.class);
 
     boolean distinct = false;
     final List<FieldExpr> fields = new ArrayList<>();
@@ -170,6 +174,7 @@ public final class QbSelect {
         GenCtx genCtx = new GenCtx();
         SqlGen gen = new SqlGen();
         gen.visitSelect(this, genCtx);
+        if (log.isDebugEnabled()) Utils.logGenCtx(log, genCtx);
         return genCtx;
     }
 

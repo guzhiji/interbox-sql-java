@@ -1,5 +1,8 @@
 package interbox.data.sql;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -8,6 +11,7 @@ import java.util.Objects;
 
 
 public final class QbDelete {
+    private final static Logger log = LoggerFactory.getLogger(QbDelete.class);
     final String fromTable;
     QbCondClause where;
 
@@ -36,6 +40,7 @@ public final class QbDelete {
         GenCtx genCtx = new GenCtx();
         SqlGen gen = new SqlGen();
         gen.visitDelete(this, genCtx);
+        if (log.isDebugEnabled()) Utils.logGenCtx(log, genCtx);
         return genCtx;
     }
 
