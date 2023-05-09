@@ -29,6 +29,19 @@
 		</dependency>
 	</dependencies>
 
+	<profiles>
+		<profile>
+			<id>github</id>
+			<distributionManagement>
+				<repository>
+					<id>github</id>
+					<name>Github Packages</name>
+					<url>https://maven.pkg.github.com/guzhiji/interbox-sql-java</url>
+				</repository>
+			</distributionManagement>
+		</profile>
+	</profiles>
+
 	<build>
 		<plugins>
 			<plugin>
