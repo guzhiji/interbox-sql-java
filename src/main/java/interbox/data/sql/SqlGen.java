@@ -1,6 +1,7 @@
 package interbox.data.sql;
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 
@@ -63,7 +64,7 @@ class SqlGen {
                 OrderBy ob = select.orderBys.get(i);
                 if (i > 0) sb.append(',');
                 sb.append(ob.field).append(' ')
-                        .append(ob.order.name().toLowerCase());
+                        .append(ob.order.name().toLowerCase(Locale.ENGLISH));
             }
         }
         ctx.result = sb.toString();
@@ -140,7 +141,7 @@ class SqlGen {
     public void visitJoin(JoinClause join, Object obj) {
         GenCtx ctx = (GenCtx) obj;
         StringBuilder sb = new StringBuilder();
-        sb.append(join.type.name().toLowerCase()).append(" join ");
+        sb.append(join.type.name().toLowerCase(Locale.ENGLISH)).append(" join ");
         if (join.table != null) {
             sb.append(join.table);
             if (join.alias != null)
@@ -213,7 +214,7 @@ class SqlGen {
                 QueryBuilder.Logical l = cond.logical == QueryBuilder.Logical.AND
                         ? QueryBuilder.Logical.OR :
                         QueryBuilder.Logical.AND;
-                String op = l.name().toLowerCase();
+                String op = l.name().toLowerCase(Locale.ENGLISH);
                 GenCtx c1 = new GenCtx(ctx);
                 cond.cond1.negated = true;
                 visitCond(cond.cond1, c1);
@@ -222,7 +223,7 @@ class SqlGen {
                 visitCond(cond.cond2, c2);
                 ctx.result = '(' + c1.result + ") " + op + " (" + c2.result + ')';
             } else {
-                String op = cond.logical.name().toLowerCase();
+                String op = cond.logical.name().toLowerCase(Locale.ENGLISH);
                 GenCtx c1 = new GenCtx(ctx);
                 cond.cond1.negated = false;
                 visitCond(cond.cond1, c1);
@@ -238,7 +239,7 @@ class SqlGen {
 
     public void visitLogicalCondList(LogicalCondList condList, Object obj) {
         GenCtx ctx = (GenCtx) obj;
-        String op = condList.logical.name().toLowerCase();
+        String op = condList.logical.name().toLowerCase(Locale.ENGLISH);
         StringBuilder sb = new StringBuilder();
         for (QbCondClause cond : condList.condList) {
             if (cond.isEnabled()) {
