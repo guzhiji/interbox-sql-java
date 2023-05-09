@@ -104,8 +104,8 @@ public final class QbUpdate {
     }
 
     public int execute(DataSource ds) {
-        try {
-            return execute(ds.getConnection());
+        try (Connection conn = ds.getConnection()) {
+            return execute(conn);
         } catch (SQLException ex) {
             throw new QbException("fail to connect to db", ex);
         }

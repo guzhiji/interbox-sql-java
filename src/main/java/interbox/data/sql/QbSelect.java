@@ -174,8 +174,8 @@ public final class QbSelect {
     }
 
     public boolean exists(DataSource ds) {
-        try {
-            return exists(ds.getConnection());
+        try (Connection conn = ds.getConnection()) {
+            return exists(conn);
         } catch (SQLException ex) {
             throw new QbException("fail to connect to db", ex);
         }
@@ -194,8 +194,8 @@ public final class QbSelect {
     }
 
     public <T> T findOne(DataSource ds, Class<T> cls) {
-        try {
-            return findOne(ds.getConnection(), cls);
+        try (Connection conn = ds.getConnection()) {
+            return findOne(conn, cls);
         } catch (SQLException ex) {
             throw new QbException("fail to connect to db", ex);
         }
@@ -218,8 +218,8 @@ public final class QbSelect {
     }
 
     public <T> List<T> findAll(DataSource ds, Class<T> cls) {
-        try {
-            return findAll(ds.getConnection(), cls);
+        try (Connection conn = ds.getConnection()) {
+            return findAll(conn, cls);
         } catch (SQLException ex) {
             throw new QbException("fail to connect to db", ex);
         }
